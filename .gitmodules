@@ -1,3 +1,6 @@
 [submodule "test-notebook"]
 	path = test-notebook
 	url = https://github.com/peps-uga/test-notebook
+[submodule "src/themes/robust"]
+	path = src/themes/robust
+	url = https://github.com/dim0627/hugo_theme_robust.git
