@@ -17,7 +17,7 @@ install:
 # Build the website
 script:
   - cd src
-  - fab serve
+  - fab render_notebooks
   - ../binaries/hugo --theme=learn
 
 # Deploy to GitHub pages
