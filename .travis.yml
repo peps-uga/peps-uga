@@ -18,7 +18,7 @@ install:
 script:
   - cd src
   - fab render_notebooks
-  - ../binaries/hugo --theme=learn
+  - ../binaries/hugo --theme=robust
 
 # Deploy to GitHub pages
 deploy:
