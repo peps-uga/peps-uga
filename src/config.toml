@@ -1,4 +1,6 @@
 baseURL = "https://peps-uga.github.io/peps-uga/"
 languageCode = "en-us"
 title = "Peps UGA"
-theme = "robust"
+theme = "robust-local"
+
+relativeURLs = "true"
