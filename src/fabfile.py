@@ -1,5 +1,6 @@
 import re
 import json
+import toml
 import sys
 import shlex
 import subprocess as sp
@@ -10,15 +11,11 @@ from typing import *
 
 import nbformat
 
-from nbconvert import MarkdownExporter
+from nbconvert import HTMLExporter
 from nbconvert.preprocessors import Preprocessor
 
 from traitlets.config import Config
 
-from watchdog.events import PatternMatchingEventHandler
-from watchdog.observers import Observer
-
-import crayons
 
 from fabric.api import *
 
@@ -26,55 +23,13 @@ from fabric.api import *
 @task
 def render_notebooks():
     """
-    Render jupyter notebooks it notebooks directory to respective markdown in content/notebooks directory.
+    Render jupyter notebooks in notebooks directory to html in static/full_html directory.
     """
-    notebooks = Path('notebooks').glob('*.ipynb')
+    notebooks = Path('notebooks').glob('**/*.ipynb')
     for notebook in notebooks:
         if (not str(notebook).startswith('.')) and ('untitled' not in str(notebook).lower()):
             update_notebook_metadata(notebook)
-            write_hugo_formatted_nb_to_md(notebook)
-
-
-@task
-def serve(hugo_args='', init_jupyter=True):
-    """
-    Watch for changes in jupyter notebooks and render them anew while hugo runs.
-
-    Args:
-        init_jupyter: initialize jupyter if set to True
-        hugo_args: command-line arguments to be passed to `hugo server`
-    """
-    observer = Observer()
-    observer.schedule(NotebookHandler(), 'notebooks')
-    observer.start()
-
-    hugo_process = sp.Popen(('../binaries/hugo', 'serve', *shlex.split(hugo_args)))
-
-    if init_jupyter:
-        jupyter_process = sp.Popen(('jupyter', 'notebook'), cwd='notebooks')
-
-    local('open http://localhost:1313')
-
-    try:
-        print(crayons.green('Successfully initialized server(s)'),
-              crayons.yellow('press ctrl+C at any time to quit'),
-              )
-        while True:
-            pass
-    except KeyboardInterrupt:
-        print(crayons.yellow('Terminating'))
-    finally:
-        if init_jupyter:
-            print(crayons.yellow('shutting down jupyter'))
-            jupyter_process.kill()
-
-        print(crayons.yellow('shutting down watchdog'))
-        observer.stop()
-        observer.join()
-        print(crayons.yellow('shutting down hugo'))
-        hugo_process.kill()
-        print(crayons.green('all processes shut down successfully'))
-        sys.exit(0)
+            write_hugo_formatted_nb_to_html(notebook)
 
 
 @task
@@ -119,74 +74,39 @@ def publish():
     print('push succeeded')
 
 
-########## Jupyter stuff #################
-
-class CustomPreprocessor(Preprocessor):
-    """Remove blank code cells and unnecessary whitespace."""
-
-    def preprocess(self, nb, resources):
-        """
-        Remove blank cells
-        """
-        for index, cell in enumerate(nb.cells):
-            if cell.cell_type == 'code' and not cell.source:
-                nb.cells.pop(index)
-            else:
-                nb.cells[index], resources = self.preprocess_cell(cell, resources, index)
-        return nb, resources
-
-    def preprocess_cell(self, cell, resources, cell_index):
-        """
-        Remove extraneous whitespace from code cells' source code
-        """
-        if cell.cell_type == 'code':
-            cell.source = cell.source.strip()
-
-        return cell, resources
-
-
-def doctor(string: str) -> str:
-    """Get rid of all the wacky newlines nbconvert adds to markdown output and return result."""
-    post_code_newlines_patt = re.compile(r'(```)(\n+)')
-    inter_output_newlines_patt = re.compile(r'(\s{4}\S+)(\n+)(\s{4})')
-
-    post_code_filtered = re.sub(post_code_newlines_patt, r'\1\n\n', string)
-    inter_output_filtered = re.sub(inter_output_newlines_patt, r'\1\n\3', post_code_filtered)
-
-    return inter_output_filtered
-
-
-def notebook_to_markdown(path: Union[Path, str]) -> str:
+def notebook_to_html(path: Union[Path, str]) -> str:
     """
-    Convert jupyter notebook to hugo-formatted markdown string
+    Convert jupyter notebook to html
 
     Args:
         path: path to notebook
 
-    Returns: hugo-formatted markdown
+    Returns: full html page
 
     """
     with open(Path(path)) as fp:
         notebook = nbformat.read(fp, as_version=4)
         assert 'front-matter' in notebook['metadata'], "You must have a front-matter field in the notebook's metadata"
         front_matter_dict = dict(notebook['metadata']['front-matter'])
-        front_matter = json.dumps(front_matter_dict, indent=2)
 
-    c = Config()
-    c.MarkdownExporter.preprocessors = [CustomPreprocessor]
-    markdown_exporter = MarkdownExporter(config=c)
+    html_exporter = HTMLExporter()
 
-    markdown, _ = markdown_exporter.from_notebook_node(notebook)
-    doctored_md = doctor(markdown)
-    # added <!--more--> comment to prevent summary creation
-    output = '\n'.join(('---', front_matter, '---', '<!--more-->', doctored_md))
+    html, _ = html_exporter.from_notebook_node(notebook)
 
-    return output
+    with open(Path(path.parents[0],"front-matter.toml")) as fm:
+        front_matter_overload = toml.load(fm)
+
+    for key in front_matter_overload.keys():
+        front_matter_dict[key] = front_matter_overload[key]
+    front_matter = json.dumps(front_matter_dict, indent=2)
 
 
-def write_hugo_formatted_nb_to_md(notebook: Union[Path, str], render_to: Optional[Union[Path, str]] = None) -> Path:
+    return html,front_matter
+
+
+def write_hugo_formatted_nb_to_html(notebook: Union[Path, str], render_to: Optional[Union[Path, str]] = None, store_to: Optional[Union[Path, str]] = None) -> Path:
     """
-    Convert Jupyter notebook to markdown and write it to the appropriate file.
+    Convert Jupyter notebook to html and write it to the appropriate file.
 
     Args:
         notebook: The path to the notebook to be rendered
@@ -194,21 +114,42 @@ def write_hugo_formatted_nb_to_md(notebook: Union[Path, str], render_to: Optiona
     """
     notebook = Path(notebook)
     notebook_metadata = json.loads(notebook.read_text())['metadata']
-    rendered_markdown_string = notebook_to_markdown(notebook)
+    rendered_html_string, front_matter  = notebook_to_html(notebook)
     slug = notebook_metadata['front-matter']['slug']
     render_to = render_to or notebook_metadata['hugo-jupyter']['render-to'] or 'content/notebooks/'
+    store_to = store_to or notebook_metadata['hugo-jupyter']['store-to'] or '/full_html/'
 
     if not render_to.endswith('/'):
         render_to += '/'
 
-    rendered_markdown_file = Path(render_to, slug + '.md')
+    rendered_html_file = Path('static'+store_to, slug + '.html') # we need to go into static folder to avoid indexation of the file
 
-    if not rendered_markdown_file.parent.exists():
-        rendered_markdown_file.parent.mkdir(parents=True)
+    if not rendered_html_file.parent.exists():
+        rendered_html_file.parent.mkdir(parents=True)
 
-    rendered_markdown_file.write_text(rendered_markdown_string)
-    print(notebook.name, '->', rendered_markdown_file.name)
-    return rendered_markdown_file
+    rendered_html_file.write_text(rendered_html_string)
+    print(notebook.name, '->', rendered_html_file.name)
+
+    # create md file with iframe to notebook inside :
+    # added <!--more--> comment to prevent summary creation
+    if 'repo' in json.loads(front_matter).keys():
+        repo = json.loads(front_matter)['repo']
+        repo=repo.replace("https://github.com", "gh")
+        repo=repo.replace("https://gitlab.com", "gl")
+        base_binder_url = "https://mybinder.org/v2/%s/master?filepath=%s"%(repo,notebook.name)
+        dynlink = 'Click to access <a href="%s" target="_blank">interactive version</a> \n'%(base_binder_url)
+    else:
+        dynlink=""
+    md = dynlink + '{{< iframe src = "%s">}}'%Path(store_to, slug + '.html')
+    rendered_md_string = '\n'.join(('---', front_matter, '---', '<!--more-->', md))
+    rendered_md_file = Path(render_to, slug + '.md')
+    if not rendered_md_file.parent.exists():
+        rendered_md_file.parent.mkdir(parents=True)
+
+    rendered_md_file.write_text(rendered_md_string)
+
+
+    return rendered_html_file,rendered_md_file
 
 
 def update_notebook_metadata(notebook: Union[Path, str],
@@ -216,7 +157,10 @@ def update_notebook_metadata(notebook: Union[Path, str],
                              subtitle: Union[None, str] = None,
                              date: Union[None, str] = None,
                              slug: Union[None, str] = None,
-                             render_to: str = None):
+                             categories: list = None,
+                             render_to: str = None,
+			     store_to: str = None,
+						):
     """
     Update the notebook's metadata for hugo rendering
 
@@ -232,12 +176,14 @@ def update_notebook_metadata(notebook: Union[Path, str],
     subtitle = subtitle or old_front_matter.get('subtitle') or 'Generic subtitle'
     date = date or old_front_matter.get('date') or datetime.now().strftime('%Y-%m-%d')
     slug = slug or old_front_matter.get('slug') or title.lower().replace(' ', '-')
+    categories = categories or old_front_matter.get('categories') or ["Notebook"]
 
     front_matter = {
         'title': title,
         'subtitle': subtitle,
         'date': date,
         'slug': slug,
+        'categories': categories,
     }
 
     # update front-matter
@@ -245,8 +191,11 @@ def update_notebook_metadata(notebook: Union[Path, str],
 
     # update hugo-jupyter settings
     render_to = render_to or notebook_data['metadata'].get('hugo-jupyter', {}).get('render-to') or 'content/notebooks/'
+    store_to = store_to or notebook_data['metadata'].get('hugo-jupyter', {}).get('store-to') or '/full_html/'
+
     hugo_jupyter = {
-        'render-to': render_to
+        'render-to': render_to,
+        'store-to': store_to
     }
     notebook_data['metadata']['hugo-jupyter'] = hugo_jupyter
 
@@ -256,64 +205,3 @@ def update_notebook_metadata(notebook: Union[Path, str],
     # make the notebook trusted again, now that we've changed it
     sp.run(['jupyter', 'trust', str(notebook_path)])
 
-
-########## Watchdog stuff #################
-
-class NotebookHandler(PatternMatchingEventHandler):
-    patterns = ["*.ipynb"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        # a mapping of notebook filepaths and their respective metadata
-        self.notebook_metadata: Mapping[str, dict] = {}
-        # a mapping of notebook filepaths and where they were rendered to
-        self.notebook_render: Mapping[str, List[Path]] = defaultdict(list)
-
-    def process(self, event):
-        # update filename_slug dictionary
-        self.update_notebook_metadata_registry(event)
-
-        try:
-            # don't automatically update front matter
-            # and render notebook until filename is
-            # changed from untitled...
-            if 'untitled' not in event.src_path.lower() and not event.src_path.startswith('.'):
-                self.delete_notebook_md(event)
-                update_notebook_metadata(event.src_path)
-                render_to = self.get_render_to_field(event)
-                rendered = write_hugo_formatted_nb_to_md(event.src_path, render_to=render_to)
-                self.notebook_render[event.src_path].append(rendered)
-        except Exception as e:
-            print('could not successfully render', event.src_path)
-            print(e)
-
-    def on_modified(self, event):
-        self.process(event)
-
-    def on_created(self, event):
-        self.process(event)
-
-    def on_deleted(self, event):
-        self.delete_notebook_md(event)
-
-    def delete_notebook_md(self, event):
-        print(crayons.yellow("attempting to delete the post for {}".format(event.src_path)))
-        for path in self.notebook_render[event.src_path]:
-            if path.exists():
-                path.unlink()
-                print(crayons.yellow('removed post: {}'.format(path)))
-
-    def update_notebook_metadata_registry(self, event):
-        try:
-            self.notebook_metadata[event.src_path] = json.loads(
-                Path(event.src_path).read_text())['metadata']
-        except json.JSONDecodeError:
-            print(crayons.yellow("Could not decode as json file: {}".format(event.src_path)))
-
-    def get_render_to_field(self, event) -> Optional[Path]:
-        try:
-            return self.notebook_metadata[event.src_path].get('hugo-jupyter', {}).get('render-to')
-        except json.JSONDecodeError:
-            print(crayons.yellow("could not marshal notebook to json: {}".format(event.src_path)))
-        except KeyError:
-            print("{} has no field hugo-jupyter.render-to in its metadata".format(event.src_path))

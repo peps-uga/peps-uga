@@ -1,1 +1,2 @@
-hugo_jupyter
+nbconvert
+toml

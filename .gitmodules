@@ -4,3 +4,6 @@
 [submodule "src/themes/robust"]
 	path = src/themes/robust
 	url = https://github.com/dim0627/hugo_theme_robust.git
+[submodule "src/notebooks/potts-example"]
+	path = src/notebooks/potts-example
+	url = https://github.com/peps-uga/potts-example.git
