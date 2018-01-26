@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Shiny on Peps UGA</title>
+    <link>https://peps-uga.github.io/peps-uga/categories/shiny/</link>
+    <description>Recent content in Shiny on Peps UGA</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 26 Jan 2018 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://peps-uga.github.io/peps-uga/categories/shiny/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Test Shiny</title>
+      <link>https://peps-uga.github.io/peps-uga/shiny/test-shiny/</link>
+      <pubDate>Fri, 26 Jan 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://peps-uga.github.io/peps-uga/shiny/test-shiny/</guid>
+      <description> Example d&amp;rsquo;application shiny Extrait de : https://shiny.rstudio.com/gallery/genome-browser.html
+  </description>
+    </item>
+    
+  </channel>
+</rss>

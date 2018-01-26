@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>https://peps-uga.github.io/peps-uga/notebooks/potts_problem/</loc>
+    <lastmod>2018-01-26T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://peps-uga.github.io/peps-uga/shiny/test-shiny/</loc>
+    <lastmod>2018-01-26T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://peps-uga.github.io/peps-uga/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://peps-uga.github.io/peps-uga/categories/notebook/</loc>
+    <lastmod>2018-01-26T00:00:00+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://peps-uga.github.io/peps-uga/notebooks/</loc>
+    <lastmod>2018-01-26T00:00:00+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://peps-uga.github.io/peps-uga/</loc>
+    <lastmod>2018-01-26T00:00:00+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://peps-uga.github.io/peps-uga/tags/potts/</loc>
+    <lastmod>2018-01-26T00:00:00+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://peps-uga.github.io/peps-uga/tags/regularization/</loc>
+    <lastmod>2018-01-26T00:00:00+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://peps-uga.github.io/peps-uga/shiny/</loc>
+    <lastmod>2018-01-26T00:00:00+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://peps-uga.github.io/peps-uga/categories/shiny/</loc>
+    <lastmod>2018-01-26T00:00:00+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://peps-uga.github.io/peps-uga/tags/</loc>
+    <lastmod>2018-01-26T00:00:00+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+</urlset>
