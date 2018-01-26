@@ -3,6 +3,7 @@
   "title": "Test Shiny",
   "date": "2018-01-26",
   "slug": "test-shiny",
+  "thumbnail": "images/shiny-logo.png",
   "categories": ["shiny"],
 }
 ---
