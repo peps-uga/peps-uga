@@ -128,6 +128,8 @@ aside.f {
 .c6 { width: 50%; }
 .c4 { width: 33.26323833%; }
 .c8 { width: 66.66666%; }
+.c10 { width: 80%; }
+.c2 { width: 20%; }
 
 @media (max-width: 768px) {
   .mcol {

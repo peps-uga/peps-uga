@@ -14,6 +14,7 @@
   ]
 }
 ---
-<!--more-->
+# Example de notebook
+
 Click to access <a href="https://mybinder.org/v2/gh/peps-uga/potts-example.git/master?filepath=Potts_problem.ipynb" target="_blank">interactive version</a> 
 {{< iframe src = "/full_html/potts_problem.html">}}
