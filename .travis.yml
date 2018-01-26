@@ -19,7 +19,7 @@ install:
 script:
   - cd src
   - fab render_notebooks
-  - ../binaries/hugo --theme=robust
+  - ../binaries/hugo --theme=robust-local
 
 # Deploy to GitHub pages
 deploy:
